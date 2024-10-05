@@ -1,4 +1,4 @@
-# Hurry: Confidently ship on a Friday with a clean LLM interface
+# Hurry AI: Confidently ship on a Friday with a clean LLM interface
 
 Hurry is a Python library that simplifies working with Large Language Models (LLMs) by providing a clean, predictable, and type-safe interface. It's designed to make LLM interactions faster and more efficient, allowing developers to confidently ship their AI-powered applications.
 
