@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "hurry"
+version = "0.0.1"
+description = "Confidently ship on a Friday with clean LLM interface"
+authors = ["thoriqakbar0 <41317726+thoriqakbar0@users.noreply.github.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+instructor = "^1.5.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

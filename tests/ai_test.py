@@ -2,7 +2,7 @@ import os
 from openai import AzureOpenAI
 from pydantic import BaseModel, Field
 from typing import List, Union, Literal, Optional, Type, Generator
-from ai import AI, user, system, assistant, Message, StreamReturn
+from friday_ai import AI, user, system, assistant, Message, StreamReturn
 from dotenv import load_dotenv
 import pytest
 
