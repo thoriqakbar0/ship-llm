@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="hurry-ai",
-    version="0.0.2",
+    version="0.0.3",
     description="Hurry: Confidently ship on a Friday with a clean LLM interface",
     author="Thoriq Akbar",
     author_email="thoriqakbar00@gmail.com",
