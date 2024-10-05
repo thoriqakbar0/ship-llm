@@ -1,10 +1,10 @@
 # Hurry AI: Confidently ship on a Friday with a clean LLM interface
 
-Hurry is a Python library that simplifies working with Large Language Models (LLMs) by providing a clean, predictable, and type-safe interface. It's designed to make LLM interactions faster and more efficient, allowing developers to confidently ship their AI-powered applications.
+Hurry AI is a Python library that simplifies working with Large Language Models (LLMs) by providing a clean, predictable, and type-safe interface. It's designed to make LLM interactions faster and more efficient, allowing developers to confidently ship their AI-powered applications.
 
-Hurry is heavily inspired by: [ell](https://github.com/madcowd/ell), a lightweight, functional prompt engineering framework. Do check them out!
+Hurry AI is heavily inspired by: [ell](https://github.com/madcowd/ell), a lightweight, functional prompt engineering framework. Do check them out!
 
-[hurry-ai notebook example](https://colab.research.google.com/drive/1Myj3waieceS1ymUDOy44VX6CDmvja0ha?usp=sharing)
+[Hurry AI-ai notebook example](https://colab.research.google.com/drive/1Myj3waieceS1ymUDOy44VX6CDmvja0ha?usp=sharing)
 
 ### Why not just use ell?
 As much as I liked ell, ell only supports openai. I want ell api for other providers and also the nice things instructor provided. Hence, a new thing.
@@ -15,25 +15,25 @@ Currently, Hurry AI has been tested with OpenAI and Azure OpenAI. We plan to exp
 
 ## Key Features
 
-- **One LLM call per function**: Hurry's philosophy is to make each function correspond to a single LLM call, making your code more predictable and easier to work with.
+- **One LLM call per function**: Hurry AI's philosophy is to make each function correspond to a single LLM call, making your code more predictable and easier to work with.
 - **Clean decorator syntax**: Use simple decorators to define your LLM interactions.
 - **Dynamic parameter injection**: Easily inject parameters into your prompts using string formatting.
 - **Type-safe structured outputs**: Get structured, type-safe responses from your LLM calls.
 - **Streaming support**: Efficiently handle streaming responses from LLMs.
-- **Faster to ship**: Hurry minimize the interaction with LLMs, making it faster than using the raw OpenAI Python API.
+- **Faster to ship**: Hurry AI minimize the interaction with LLMs, making it faster than using the raw OpenAI Python API.
 
 ## Installation
 
 ```bash
-pip install hurry
+pip install Hurry AI
 ```
 
 ## Quick Start
 
-Here's a simple example of how to use Hurry:
+Here's a simple example of how to use Hurry AI:
 
 ```python
-from hurry_ai import AI, user, system
+from Hurry AI_ai import AI, user, system
 
 ai = AI()
 
@@ -49,9 +49,9 @@ summary = summarize_text("Long text to summarize...")
 print(summary)
 ```
 
-## Why Hurry allows you to ship fast
+## Why Hurry AI allows you to ship fast
 
-Hurry provides a minimal API interface compared to the raw OpenAI Python API, allowing for faster iteration and cleaner code:
+Hurry AI provides a minimal API interface compared to the raw OpenAI Python API, allowing for faster iteration and cleaner code:
 
 ### OpenAI Python API:
 
@@ -64,7 +64,7 @@ client.chat.completions.create(
 )
 ```
 
-### Hurry:
+### Hurry AI:
 
 ```python
 @ai.text()
@@ -73,11 +73,11 @@ def my_function():
     return "User message"
 ```
 
-Hurry optimizes the API call process, reduces boilerplate code, and handles parameter management more efficiently, resulting in faster development and a cleaner codebase.
+Hurry AI optimizes the API call process, reduces boilerplate code, and handles parameter management more efficiently, resulting in faster development and a cleaner codebase.
 
 ## Type-Safe Structured Outputs
 
-Hurry supports type-safe structured outputs, making it easier to work with complex response formats:
+Hurry AI supports type-safe structured outputs, making it easier to work with complex response formats:
 
 ```python
 from pydantic import BaseModel
@@ -101,7 +101,7 @@ print(f"Subject: {result.subject}, Confidence: {result.confidence}")
 
 ## Streaming Support
 
-Hurry provides easy-to-use streaming support:
+Hurry AI provides easy-to-use streaming support:
 
 ```python
 @ai.text(stream=True)
@@ -171,4 +171,4 @@ Just open an issue, and let's discuss it.
 
 ## License
 
-Hurry is released under the [MIT License](LICENSE).
+Hurry AI is released under the [MIT License](LICENSE).
