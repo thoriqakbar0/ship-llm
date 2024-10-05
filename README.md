@@ -75,7 +75,7 @@ def my_function():
 
 Hurry AI optimizes the API call process, reduces boilerplate code, and handles parameter management more efficiently, resulting in faster development and a cleaner codebase.
 
-## Inspired by Instructor
+## Predictable structured output, courtesy of Instructor
 
 Hurry's structured output functionality use [Instructor](https://github.com/jxnl/instructor) in the background. We've incorporated similar concepts to provide type-safe, structured outputs that make working with AI responses more reliable and easier to manage.
 
