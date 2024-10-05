@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="hurry",
+    name="hurry-ai",
     version="0.0.1",
-    description="Friday AI: Confidently ship on a Friday with clean LLM interface",
+    description="Hurry: Confidently ship on a Friday with a clean LLM interface",
     author="Thoriq Akbar",
     author_email="thoriqakbar00@gmail.com",
-    url="https://github.com/thoriqakbar0/friday-ai",
+    url="https://github.com/thoriqakbar0/hurry",
     packages=["hurry"],
     install_requires=[
         "instructor",

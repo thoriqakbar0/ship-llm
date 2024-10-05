@@ -14,7 +14,7 @@ Hurry is a Python library that simplifies working with Large Language Models (LL
 ## Installation
 
 ```bash
-pip install hurry
+pip install hurry-ai
 ```
 
 ## Quick Start
@@ -38,9 +38,9 @@ summary = summarize_text("Long text to summarize...")
 print(summary)
 ```
 
-## Why Hurry is Faster
+## Why Hurry allows you to ship fast
 
-Hurry is designed to be faster and more efficient than using the raw OpenAI Python API. Here's a comparison:
+Hurry is designed to allows you to iterate quicker than using the raw OpenAI Python API. Here's a comparison:
 
 ### OpenAI Python API:
 
@@ -104,13 +104,8 @@ for chunk in streaming_function():
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for more details.
+Just open issue and lets discuss it.
 
 ## License
 
 Hurry is released under the [MIT License](LICENSE).
-```
-
-This documentation covers the main features of Hurry, including its philosophy of one LLM call per function, the clean decorator syntax, dynamic parameter injection, type-safe structured outputs, and streaming support. It also highlights why Hurry is faster than using the raw OpenAI Python API and provides examples of how to use these features.
-
-You may want to expand on certain sections, add more detailed examples, or include information about advanced features as needed. Remember to create separate files for the Contributing Guide and License if they don't already exist.
