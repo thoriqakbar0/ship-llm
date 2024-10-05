@@ -4,7 +4,7 @@ Hurry is a Python library that simplifies working with Large Language Models (LL
 
 Hurry is heavily inspired by: [ell](https://github.com/madcowd/ell), a lightweight, functional prompt engineering framework. Do check them out!
 
-(google colab notebook)[https://colab.research.google.com/drive/1Myj3waieceS1ymUDOy44VX6CDmvja0ha?usp=sharing]
+[google colab notebook](https://colab.research.google.com/drive/1Myj3waieceS1ymUDOy44VX6CDmvja0ha?usp=sharing)
 
 ### Why not just use ell?
 As much as I liked ell, ell only supports openai. I want ell api for other providers and also the nice things instructor provided. Hence, a new thing.
