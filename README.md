@@ -34,8 +34,11 @@ Here's a simple example of how to use Hurry AI:
 
 ```python
 from hurry_ai import AI, user, system
+from openai import OpenAI
 
-ai = AI()
+client = OpenAI(api_key="xxx)
+
+ai = AI(client)
 
 @ai.text()
 def summarize_text(text: str):
