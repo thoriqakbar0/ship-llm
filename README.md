@@ -4,8 +4,14 @@ Hurry is a Python library that simplifies working with Large Language Models (LL
 
 Hurry is heavily inspired by: [ell](https://github.com/madcowd/ell), a lightweight, functional prompt engineering framework. Do check them out!
 
+(google colab notebook)[https://colab.research.google.com/drive/1Myj3waieceS1ymUDOy44VX6CDmvja0ha?usp=sharing]
+
 ### Why not just use ell?
-As much as I liked ell, i can't use it in my work. I want ell api and also the nice things instructor provided. Hence, a new thing.
+As much as I liked ell, ell only supports openai. I want ell api for other providers and also the nice things instructor provided. Hence, a new thing.
+
+## Supported Providers
+
+Currently, Hurry AI has been tested with OpenAI and Azure OpenAI. We plan to expand support to other providers through integration with LiteLLM in the future.
 
 ## Key Features
 
@@ -158,10 +164,6 @@ def try_classifier(query: str, subject: Optional[str] = None, chapter_id: Option
 result = try_classifier("What is photosynthesis?", subject="Biology", chapter_id=5)
 print(result)
 ```
-
-## Supported Providers
-
-Currently, Hurry AI has been tested with OpenAI and Azure OpenAI. We plan to expand support to other providers through integration with LiteLLM in the future.
 
 ## Contributing
 
