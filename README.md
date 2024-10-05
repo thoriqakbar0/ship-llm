@@ -49,7 +49,7 @@ summary = summarize_text("Long text to summarize...")
 print(summary)
 ```
 
-## Why Hurry AI allows you to ship fast
+## How Hurry AI allows you to ship fast
 
 Hurry AI provides a minimal API interface compared to the raw OpenAI Python API, allowing for faster iteration and cleaner code:
 
