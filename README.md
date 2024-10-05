@@ -1,1 +1,1 @@
-# Friday AI: Confidently ship on a Friday with clean LLM interface
+# Hurry: Confidently ship on a Friday with clean LLM interface
