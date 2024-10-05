@@ -4,7 +4,7 @@ Hurry AI is a Python library that simplifies working with Large Language Models 
 
 Hurry AI is heavily inspired by: [ell](https://github.com/madcowd/ell), a lightweight, functional prompt engineering framework. Do check them out!
 
-[Hurry AI-ai notebook example](https://colab.research.google.com/drive/1Myj3waieceS1ymUDOy44VX6CDmvja0ha?usp=sharing)
+[Hurry AI notebook example](https://colab.research.google.com/drive/1Myj3waieceS1ymUDOy44VX6CDmvja0ha?usp=sharing)
 
 ### Why not just use ell?
 As much as I liked ell, ell only supports openai. I want ell api for other providers and also the nice things instructor provided. Hence, a new thing.
@@ -33,7 +33,7 @@ pip install Hurry AI
 Here's a simple example of how to use Hurry AI:
 
 ```python
-from Hurry AI_ai import AI, user, system
+from hurry_ai import AI, user, system
 
 ai = AI()
 
@@ -127,8 +127,7 @@ def conversation():
         user("What are the top 3 must-visit attractions?")
     ]
 
-result = conversation()
-print(result)
+result = conversation() # When visiting Paris, here are three must-visit attractions:
 ```
 
 ### Mixed types of message interface
