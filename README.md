@@ -25,7 +25,7 @@ Currently, Hurry AI has been tested with OpenAI and Azure OpenAI. We plan to exp
 ## Installation
 
 ```bash
-pip install Hurry AI
+pip install hurry-ai
 ```
 
 ## Quick Start
