@@ -1,3 +1,32 @@
+# Hurry: Confidently ship on a Friday with a clean LLM interface
+
+Hurry is a Python library that simplifies working with Large Language Models (LLMs) by providing a clean, predictable, and type-safe interface. It's designed to make LLM interactions faster and more efficient, allowing developers to confidently ship their AI-powered applications.
+
+Hurry is heavily inspired by: [ell](https://github.com/madcowd/ell), a lightweight, functional prompt engineering framework. Do check them out!
+
+### Why not just use ell?
+As much as I liked ell, i can't use it in my work. I want ell api and also the nice things instructor provided. Hence, a new thing.
+
+## Key Features
+
+- **One LLM call per function**: Hurry's philosophy is to make each function correspond to a single LLM call, making your code more predictable and easier to work with.
+- **Clean decorator syntax**: Use simple decorators to define your LLM interactions.
+- **Dynamic parameter injection**: Easily inject parameters into your prompts using string formatting.
+- **Type-safe structured outputs**: Get structured, type-safe responses from your LLM calls.
+- **Streaming support**: Efficiently handle streaming responses from LLMs.
+- **Faster to ship**: Hurry minimize the interaction with LLMs, making it faster than using the raw OpenAI Python API.
+
+## Installation
+
+```bash
+pip install hurry
+```
+
+## Quick Start
+
+Here's a simple example of how to use Hurry:
+
+```python
 from hurry_ai import AI, user, system
 
 ai = AI()
