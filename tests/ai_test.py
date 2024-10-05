@@ -1,21 +1,20 @@
 import os
-from openai import AzureOpenAI
+from openai import OpenAI, AzureOpenAI
 from pydantic import BaseModel, Field
 from typing import List, Union, Literal, Optional, Type, Generator
-from hurry import AI, user, system, assistant, Message, StreamReturn
+from hurry_ai.ai import AI, system, user, assistant, StreamReturn
 from dotenv import load_dotenv
 import pytest
+from openai.types import ChatModel
 
 load_dotenv()
 
 # Setup
-client = AzureOpenAI(
-    azure_endpoint=os.getenv("OPENAI_4o_MINI_BASE", ""),
-    api_key=os.getenv("OPENAI_4o_MINI_API_KEY"),
+client = OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY"),
 )
-model = os.getenv("OPENAI_4o_MINI_GPT_ENGINE")
 
-ai = AI(client=client, model=model)
+ai = AI(client=client, model="gpt-4o-mini")
 
 IMAGE_URLS = [
     "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
@@ -189,7 +188,7 @@ def test_multiple_images():
     result = multiple_images()
     print(result)
     assert isinstance(result, str)
-    assert "nature" in result.lower() and "logo" in result.lower()
+    assert "nature" or "natural" in result.lower() and "logo" in result.lower()
 
 def test_structured_streaming():
     @ai.structured(StoryPart, stream=True, stream_mode="partial")

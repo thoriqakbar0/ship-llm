@@ -1,16 +1,15 @@
 [tool.poetry]
-name = "hurry"
-version = "0.0.1"
-description = "Confidently ship on a Friday with clean LLM interface"
-authors = ["thoriqakbar0 <41317726+thoriqakbar0@users.noreply.github.com>"]
-license = "MIT"
-readme = "README.md"
+name = "hurry-ai"
+version = "0.0.2"
+description = "Hurry: Confidently ship on a Friday with a clean LLM interface"
+authors = ["Thoriq Akbar <thoriqakbar00@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-instructor = "^1.5.1"
-
+instructor = "*"
+openai = "*"
+pydantic = "*"
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"

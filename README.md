@@ -1,28 +1,4 @@
-# Hurry: Confidently ship on a Friday with a clean LLM interface
-
-Hurry is a Python library that simplifies working with Large Language Models (LLMs) by providing a clean, predictable, and type-safe interface. It's designed to make LLM interactions faster and more efficient, allowing developers to confidently ship their AI-powered applications.
-
-## Key Features
-
-- **One LLM call per function**: Hurry's philosophy is to make each function correspond to a single LLM call, making your code more predictable and easier to work with.
-- **Clean decorator syntax**: Use simple decorators to define your LLM interactions.
-- **Dynamic parameter injection**: Easily inject parameters into your prompts using string formatting.
-- **Type-safe structured outputs**: Get structured, type-safe responses from your LLM calls.
-- **Streaming support**: Efficiently handle streaming responses from LLMs.
-- **Faster than raw OpenAI API**: Hurry optimizes the interaction with LLMs, making it faster than using the raw OpenAI Python API.
-
-## Installation
-
-```bash
-pip install hurry-ai
-```
-
-## Quick Start
-
-Here's a simple example of how to use Hurry:
-
-```python
-from hurry import AI, user, system
+from hurry_ai import AI, user, system
 
 ai = AI()
 
@@ -40,7 +16,7 @@ print(summary)
 
 ## Why Hurry allows you to ship fast
 
-Hurry is designed to allows you to iterate quicker than using the raw OpenAI Python API. Here's a comparison:
+Hurry provides a minimal API interface compared to the raw OpenAI Python API, allowing for faster iteration and cleaner code:
 
 ### OpenAI Python API:
 
@@ -62,7 +38,7 @@ def my_function():
     return "User message"
 ```
 
-Hurry optimizes the API call process, reduces boilerplate code, and handles parameter management more efficiently, resulting in faster execution and a cleaner codebase.
+Hurry optimizes the API call process, reduces boilerplate code, and handles parameter management more efficiently, resulting in faster development and a cleaner codebase.
 
 ## Type-Safe Structured Outputs
 
@@ -102,9 +78,65 @@ for chunk in streaming_function():
     print(chunk, end="", flush=True)
 ```
 
+## More Examples
+
+### Using system, user, and assistant functions
+
+```python
+@ai.text()
+def conversation():
+    """You are a helpful assistant."""
+    return [
+        user("Hi, I'm planning a trip to Paris."),
+        assistant("That's exciting! Paris is a beautiful city. What would you like to know about planning your trip?"),
+        user("What are the top 3 must-visit attractions?")
+    ]
+
+result = conversation()
+print(result)
+```
+
+### Mixed types of message interface
+
+```python
+@ai.text()
+def mixed_messages():
+    return [
+        system("You're a helpful travel assistant with knowledge about Paris."),
+        user("Hi, I'm planning a trip to Paris."),
+        {"role": "user", "content": "What are the top 3 must-visit attractions?"},
+        assistant("Certainly! The top 3 must-visit attractions in Paris are:\n1. The Eiffel Tower\n2. The Louvre Museum\n3. Notre-Dame Cathedral"),
+        user("Tell me more about the Louvre.")
+    ]
+
+result = mixed_messages()
+print(result)
+```
+
+### Template string for dynamic parameter injection
+
+```python
+@ai.structured(SubjectClassifier)
+def try_classifier(query: str, subject: Optional[str] = None, chapter_id: Optional[int] = None):
+    """
+    Route the query to the correct database. While supplied with subject, it still doesn't guarantee the correct database.
+
+    subject sent from the chatbot: {subject}
+    chapter_id: {chapter_id}
+    """
+    return f"user query this while chatting with assistant: {query}"
+
+result = try_classifier("What is photosynthesis?", subject="Biology", chapter_id=5)
+print(result)
+```
+
+## Supported Providers
+
+Currently, Hurry AI has been tested with OpenAI and Azure OpenAI. We plan to expand support to other providers through integration with LiteLLM in the future.
+
 ## Contributing
 
-Just open issue and lets discuss it.
+Just open an issue, and let's discuss it.
 
 ## License
 

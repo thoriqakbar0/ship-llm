@@ -1,15 +1,20 @@
 from functools import wraps
 from pydantic import BaseModel, Field, ValidationError
 from pydantic.networks import AnyUrl
-from typing import List, Union, Literal, Optional, Any, Generator, Tuple, TypedDict, overload, TypeVar, Callable, Type, Annotated
 import instructor
 from instructor import Partial
+from typing import List, Union, Literal, Optional, Any, Generator, Tuple, TypedDict, overload, TypeVar, Callable, Type, Annotated, Generic
 from threading import Event
 from openai import AzureOpenAI, OpenAI
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from openai.types.chat.completion_create_params import CompletionCreateParamsNonStreaming, CompletionCreateParamsStreaming
 from instructor import Mode
 import re
+from openai.types import ChatModel
+from typing import TypeVar
+
+OpenAIClient = TypeVar('OpenAIClient', bound=OpenAI)
+AzureOpenAIClient = TypeVar('AzureOpenAIClient', bound=AzureOpenAI)
 
 import inspect
 from typing import get_type_hints
@@ -73,11 +78,11 @@ def templated_docstring(template):
         return func
     return decorator
 
-class AI:
-    def __init__(self, client: Optional[Union[AzureOpenAI, OpenAI]] = None, model: Optional[str] = None):
-        self.client = client
+class AI(Generic[T]):
+    def __init__(self, client: Optional[T] = None, model: Optional[ChatModel] = None):
+        self.client: Optional[T] = client
         self.json_client = instructor.patch(client) if client else None
-        self.model = model
+        self.model: Optional[ChatModel] = model if model else ("gpt-4o-mini" if isinstance(client, OpenAI) else None)
         self.active_stream: Optional[Event] = None
 
     def _check_docstring_signature(self, func):
@@ -95,7 +100,7 @@ class AI:
     def text(
         self,
         stream: Literal[False] = False,
-        model: Optional[str] = None,
+        model: Optional[ChatModel] = None,
         client: Optional[Union[AzureOpenAI, OpenAI]] = None,
         **llm_params
     ) -> Callable[[Callable[..., Any]], Callable[..., str]]:
@@ -105,7 +110,7 @@ class AI:
     def text(
         self,
         stream: Literal[True],
-        model: Optional[str] = None,
+        model: Optional[ChatModel] = None,
         client: Optional[Union[AzureOpenAI, OpenAI]] = None,
         **llm_params
     ) -> Callable[[Callable[..., Any]], Callable[..., StreamReturn]]:
@@ -114,7 +119,7 @@ class AI:
     def text( # type: ignore
         self,
         stream: bool = False,
-        model: Optional[str] = None,
+        model: Optional[ChatModel] = None,
         client: Optional[Union[AzureOpenAI, OpenAI]] = None,
         **llm_params
     ) -> Callable[[Callable[..., Any]], Callable[..., Union[str, StreamReturn]]]:
@@ -179,7 +184,7 @@ class AI:
         self,
         response_format: Type[T],
         stream: Literal[False] = False,
-        model: Optional[str] = None,
+        model: Optional[ChatModel] = None,
         client: Optional[Union[AzureOpenAI, OpenAI]] = None,
         **llm_params
     ) -> Callable[[Callable[..., Any]], Callable[..., T]]:
@@ -191,7 +196,7 @@ class AI:
         response_format: Type[T],
         stream: Literal[True],
         stream_mode: Literal["partial", "iterable"] = "partial",
-        model: Optional[str] = None,
+        model: Optional[ChatModel] = None,
         client: Optional[Union[AzureOpenAI, OpenAI]] = None,
         **llm_params
     ) -> Callable[[Callable[..., Any]], Callable[..., Generator[T, None, None]]]:
@@ -202,7 +207,7 @@ class AI:
         response_format: Type[T],
         stream: bool = False,
         stream_mode: Literal["partial", "iterable"] = "partial",
-        model: Optional[str] = None,
+        model: Optional[ChatModel] = None,
         client: Optional[Union[AzureOpenAI, OpenAI]] = None,
         **llm_params
     ) -> Callable[[Callable[..., Any]], Callable[..., Union[T, Generator[T, None, None]]]]:
