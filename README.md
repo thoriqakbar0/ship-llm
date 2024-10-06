@@ -25,11 +25,7 @@ a
 ## Installation
 
 ```bash
-<<<<<<< Updated upstream
-pip install hurry-ai
-=======
-pip install Ship LLM
->>>>>>> Stashed changes
+pip install ship-llm
 ```
 
 ## Quick Start
@@ -37,14 +33,11 @@ pip install Ship LLM
 Here's a simple example of how to use Ship LLM:
 
 ```python
-<<<<<<< Updated upstream
-from hurry_ai import AI, user, system
 from openai import OpenAI
-=======
-from ship-llm import AI, user, system
->>>>>>> Stashed changes
+from ship_llm import AI, user, system
+```
 
-client = OpenAI(api_key="xxx)
+client = OpenAI(api_key="xxx")
 
 ai = AI(client)
 
@@ -60,11 +53,7 @@ summary = summarize_text("Long text to summarize...")
 print(summary)
 ```
 
-<<<<<<< Updated upstream
-## How Hurry AI allows you to ship fast
-=======
 ## Why Ship LLM allows you to ship fast
->>>>>>> Stashed changes
 
 Ship LLM provides a minimal API interface compared to the raw OpenAI Python API, allowing for faster iteration and cleaner code:
 
