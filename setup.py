@@ -1,13 +1,13 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="hurry-ai",
+    name="ship-llm",
     version="0.0.3",
-    description="Hurry: Confidently ship on a Friday with a clean LLM interface",
+    description="Ship Now, Ship Fast. Ship Fast, Ship Now - Clean LLM Interface for Rapid Deployment",
     author="Thoriq Akbar",
     author_email="thoriqakbar00@gmail.com",
-    url="https://github.com/thoriqakbar0/hurry",
-    packages=["hurry_ai"],
+    url="https://github.com/thoriqakbar0/ship-llm",
+    packages=["ship_llm"],
     install_requires=[
         "instructor",
         "openai",

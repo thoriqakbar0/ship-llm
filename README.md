@@ -1,40 +1,48 @@
-# Hurry AI: Ship Fast, Ship Now - Clean LLM Interface for Rapid Deployment
+# Ship LLM: Ship Fast, Ship Now - Clean LLM Interface for Rapid Deployment
 
-Hurry AI is a Python library that simplifies working with Large Language Models (LLMs) by providing a clean, predictable, and type-safe interface. It's designed to make LLM interactions faster and more efficient, allowing developers to confidently ship their AI-powered applications.
+Ship LLM is a Python library that simplifies working with Large Language Models (LLMs) by providing a clean, predictable, and type-safe interface. It's designed to make LLM interactions faster and more efficient, allowing developers to confidently ship their AI-powered applications.
 
-Hurry AI is heavily inspired by: [ell](https://github.com/madcowd/ell), a lightweight, functional prompt engineering framework. Do check them out!
+Ship LLM is heavily inspired by: [ell](https://github.com/madcowd/ell), a lightweight, functional prompt engineering framework. Do check them out!
 
-[Hurry AI notebook example](https://colab.research.google.com/drive/1Myj3waieceS1ymUDOy44VX6CDmvja0ha?usp=sharing)
+[Ship LLM notebook example](https://colab.research.google.com/drive/1Myj3waieceS1ymUDOy44VX6CDmvja0ha?usp=sharing)
 
 ### Why not just use ell?
 As much as I liked ell, ell only supports openai. I want ell api for other providers and also the nice things instructor provided. Hence, a new thing.
 
 ## Supported Providers
 
-Currently, Hurry AI has been tested with OpenAI and Azure OpenAI. We plan to expand support to other providers through integration with LiteLLM in the future.
+Currently, Ship LLM has been tested with OpenAI and Azure OpenAI. We plan to expand support to other providers through integration with LiteLLM in the future.
 
 ## Key Features
 
-- **One LLM call per function**: Hurry AI's philosophy is to make each function correspond to a single LLM call, making your code more predictable and easier to work with.
+- **One LLM call per function**: Ship LLM's philosophy is to make each function correspond to a single LLM call, making your code more predictable and easier to work with.
 - **Clean decorator syntax**: Use simple decorators to define your LLM interactions.
 - **Dynamic parameter injection**: Easily inject parameters into your prompts using string formatting.
 - **Type-safe structured outputs**: Get structured, type-safe responses from your LLM calls.
 - **Streaming support**: Efficiently handle streaming responses from LLMs.
-- **Faster to ship**: Hurry AI minimize the interaction with LLMs, making it faster than using the raw OpenAI Python API.
-
+- **Faster to ship**: Ship LLM minimize the interaction with LLMs, making it faster than using the raw OpenAI Python API.
+a
 ## Installation
 
 ```bash
+<<<<<<< Updated upstream
 pip install hurry-ai
+=======
+pip install Ship LLM
+>>>>>>> Stashed changes
 ```
 
 ## Quick Start
 
-Here's a simple example of how to use Hurry AI:
+Here's a simple example of how to use Ship LLM:
 
 ```python
+<<<<<<< Updated upstream
 from hurry_ai import AI, user, system
 from openai import OpenAI
+=======
+from ship-llm import AI, user, system
+>>>>>>> Stashed changes
 
 client = OpenAI(api_key="xxx)
 
@@ -52,9 +60,13 @@ summary = summarize_text("Long text to summarize...")
 print(summary)
 ```
 
+<<<<<<< Updated upstream
 ## How Hurry AI allows you to ship fast
+=======
+## Why Ship LLM allows you to ship fast
+>>>>>>> Stashed changes
 
-Hurry AI provides a minimal API interface compared to the raw OpenAI Python API, allowing for faster iteration and cleaner code:
+Ship LLM provides a minimal API interface compared to the raw OpenAI Python API, allowing for faster iteration and cleaner code:
 
 ### OpenAI Python API:
 
@@ -67,7 +79,7 @@ client.chat.completions.create(
 )
 ```
 
-### Hurry AI:
+### Ship LLM:
 
 ```python
 @ai.text()
@@ -76,7 +88,7 @@ def my_function():
     return "User message"
 ```
 
-Hurry AI optimizes the API call process, reduces boilerplate code, and handles parameter management more efficiently, resulting in faster development and a cleaner codebase.
+Ship LLM optimizes the API call process, reduces boilerplate code, and handles parameter management more efficiently, resulting in faster development and a cleaner codebase.
 
 ## Predictable structured output, courtesy of Instructor
 
@@ -84,7 +96,7 @@ Hurry's structured output functionality use [Instructor](https://github.com/jxnl
 
 ## Type-Safe Structured Outputs
 
-Hurry AI supports type-safe structured outputs, making it easier to work with complex response formats:
+Ship LLM supports type-safe structured outputs, making it easier to work with complex response formats:
 
 ```python
 from pydantic import BaseModel
@@ -108,7 +120,7 @@ print(f"Subject: {result.subject}, Confidence: {result.confidence}")
 
 ## Streaming Support
 
-Hurry AI provides easy-to-use streaming support:
+Ship LLM provides easy-to-use streaming support:
 
 ```python
 @ai.text(stream=True)
@@ -177,4 +189,4 @@ Just open an issue, and let's discuss it.
 
 ## License
 
-Hurry AI is released under the [MIT License](LICENSE).
+Ship LLM is released under the [MIT License](LICENSE).

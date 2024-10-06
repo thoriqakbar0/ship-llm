@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "hurry-ai"
+name = "ship-llm"
 version = "0.0.3"
-description = "Hurry: Confidently ship on a Friday with a clean LLM interface"
+description = "Ship LLM: Ship Fast, Ship Now - Clean LLM Interface for Rapid Deployment"
 authors = ["Thoriq Akbar <thoriqakbar00@gmail.com>"]
 
 [tool.poetry.dependencies]
