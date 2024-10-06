@@ -51,7 +51,6 @@ def summarize_text(text: str):
 
 summary = summarize_text("Long text to summarize...")
 print(summary)
-```
 
 ## Why Ship LLM allows you to ship fast
 
