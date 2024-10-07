@@ -2,7 +2,7 @@ import os
 from openai import OpenAI, AzureOpenAI
 from pydantic import BaseModel, Field
 from typing import List, Union, Literal, Optional, Type, Generator
-from hurry_ai.ai import AI, system, user, assistant, StreamReturn
+from ship_llm.ai import AI, system, user, assistant, StreamReturn
 from dotenv import load_dotenv
 import pytest
 from openai.types import ChatModel
