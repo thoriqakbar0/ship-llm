@@ -35,7 +35,7 @@ Here's a simple example of how to use Ship LLM:
 ```python
 from openai import OpenAI
 from ship_llm import AI, user, system
-```
+
 
 client = OpenAI(api_key="xxx")
 
@@ -51,7 +51,7 @@ def summarize_text(text: str):
 
 summary = summarize_text("Long text to summarize...")
 print(summary)
-
+```
 ## Why Ship LLM allows you to ship fast
 
 Ship LLM provides a minimal API interface compared to the raw OpenAI Python API, allowing for faster iteration and cleaner code:
