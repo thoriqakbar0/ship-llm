@@ -1,5 +1,7 @@
 # Ship LLM: Ship Fast, Ship Now - Clean LLM Interface for Rapid Deployment
 
+⚠️ **WARNING: This library's API is subject to frequent changes. It is not recommended for use in production environments.**
+
 Ship LLM is a Python library that simplifies working with Large Language Models (LLMs) by providing a clean, predictable, and type-safe interface. It's designed to make LLM interactions faster and more efficient, allowing developers to confidently ship their AI-powered applications.
 
 Ship LLM is heavily inspired by: [ell](https://github.com/madcowd/ell), a lightweight, functional prompt engineering framework. Do check them out!
