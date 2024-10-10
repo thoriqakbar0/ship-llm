@@ -1,0 +1,5 @@
+instructor
+openai
+requests
+pillow
+python-dotenv

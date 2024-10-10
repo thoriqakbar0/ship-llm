@@ -1,11 +1,13 @@
 import os
-from openai import OpenAI, AzureOpenAI
+from openai import OpenAI, AzureOpenAI # type: ignore
 from pydantic import BaseModel, Field
-from typing import List, Union, Literal, Optional, Type, Generator
-from ship_llm.ai import AI, system, user, assistant, StreamReturn
+from typing import List, Union, Literal, Optional, Generator
+from ship_llm.ai import AI, StreamReturn
 from dotenv import load_dotenv
 import pytest
 from openai.types import ChatModel
+import requests
+from io import BytesIO
 
 load_dotenv()
 
@@ -29,6 +31,24 @@ class SubjectClassifier(BaseModel):
 class StoryPart(BaseModel):
     part_number: int
     content: str
+
+def test_image_bytes_analysis():
+    # Download an image and get its bytes
+    image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+    response = requests.get(image_url)
+    image_bytes = BytesIO(response.content).getvalue()
+
+    @ai.text()
+    def image_bytes_analysis():
+        """You are an image analysis AI. Describe the image in detail."""
+        return ai.user("Describe this image:", image_bytes)
+
+    result = image_bytes_analysis()
+    assert isinstance(result, str)
+    assert len(result) > 0
+    assert "wooden" in result.lower() or "boardwalk" in result.lower() or "nature" in result.lower()
+    print(f"Image analysis result: {result}")
+
 
 def test_simplified_docstring_mismatch():
     ai = AI()
@@ -93,11 +113,11 @@ def test_mixed_message_types():
     @ai.text()
     def mixed_messages():
         return [
-            system("You're a helpful travel assistant with knowledge about Paris."),
-            user("Hi, I'm planning a trip to Paris."),
+            ai.system("You're a helpful travel assistant with knowledge about Paris."),
+            ai.user("Hi, I'm planning a trip to Paris."),
             {"role": "user", "content": "What are the top 3 must-visit attractions?"},
-            assistant("Certainly! The top 3 must-visit attractions in Paris are:\n1. The Eiffel Tower\n2. The Louvre Museum\n3. Notre-Dame Cathedral"),
-            user("Tell me more about the Louvre.")
+            ai.assistant("Certainly! The top 3 must-visit attractions in Paris are:\n1. The Eiffel Tower\n2. The Louvre Museum\n3. Notre-Dame Cathedral"),
+            ai.user("Tell me more about the Louvre.")
         ]
 
     result = mixed_messages()
@@ -149,7 +169,7 @@ def test_image_analysis():
     @ai.text()
     def image_analysis():
         """You are an image analysis AI. Describe the image in detail."""
-        return user("Describe this image:", IMAGE_URLS[0])
+        return ai.user("Describe this image:", IMAGE_URLS[0])
 
     result = image_analysis()
     assert isinstance(result, str)
@@ -160,9 +180,9 @@ def test_conversation():
     def conversation():
         """You are a helpful assistant."""
         return [
-            user("Hi, I'm planning a trip to Paris."),
-            assistant("That's exciting! Paris is a beautiful city. What would you like to know about planning your trip?"),
-            user("What are the top 3 must-visit attractions?")
+            ai.user("Hi, I'm planning a trip to Paris."),
+            ai.assistant("That's exciting! Paris is a beautiful city. What would you like to know about planning your trip?"),
+            ai.user("What are the top 3 must-visit attractions?")
         ]
 
     result = conversation()
@@ -173,7 +193,7 @@ def test_system_prompt():
     @ai.text()
     def system_prompt():
         """You are a poetry expert. Analyze the given poem and explain its meaning."""
-        return user("Analyze this poem: 'Two roads diverged in a wood, and I— / I took the one less traveled by, / And that has made all the difference.'")
+        return ai.user("Analyze this poem: 'Two roads diverged in a wood, and I— / I took the one less traveled by, / And that has made all the difference.'")
 
     result = system_prompt()
     assert isinstance(result, str)
@@ -183,7 +203,7 @@ def test_multiple_images():
     @ai.text()
     def multiple_images():
         """You are an image comparison AI. Compare and contrast the given images."""
-        return user("Compare these images:", IMAGE_URLS[0], IMAGE_URLS[1])
+        return ai.user("Compare these images:", IMAGE_URLS[0], IMAGE_URLS[1])
 
     result = multiple_images()
     print(result)
