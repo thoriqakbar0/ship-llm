@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ship-llm"
-version = "0.0.4"
+version = "0.0.5"
 description = "Ship LLM: Ship Fast, Ship Now - Clean LLM Interface for Rapid Deployment"
 authors = ["Thoriq Akbar <thoriqakbar00@gmail.com>"]
 
@@ -10,9 +10,11 @@ instructor = "*"
 openai = "*"
 pydantic = "*"
 requests = "^2.32.3"
+pillow = "^10.4.0"
+
+[tool.poetry.dev-dependencies]
 pytest = "^8.3.3"
 python-dotenv = "^1.0.1"
-pillow = "^10.4.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
