@@ -75,12 +75,12 @@ class Message(BaseModel):
             if not isinstance(block, (ImageUrlContent, Image))
         ])
     @property
-    def images(self) -> List[Image | None]:
+    def images(self) -> List[Union[Image, None]]:
         return [
             Image(url=block.image_url["url"]) if isinstance(block, ImageUrlContent)
             else block if isinstance(block, Image)
             else Image(url=block) if isinstance(block, str) and is_valid_url(block)
-            else None  # This else is necessary for the syntax, but we'll filter out None later
+            else None
             for block in self.content
             if isinstance(block, (ImageUrlContent, Image)) or (isinstance(block, str) and is_valid_url(block))
         ]
