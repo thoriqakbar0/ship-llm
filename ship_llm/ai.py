@@ -44,16 +44,24 @@ class Image(BaseModel):
         if self.url is None and self.image is None:
             raise ValueError("Either url or image must be provided")
 
+    @classmethod
+    def from_path(cls, path: str):
+        with PILImage.open(path) as img:
+            buffered = BytesIO()
+            img.save(buffered, format="PNG")
+            img_str = base64.b64encode(buffered.getvalue()).decode()
+            return cls(url=f"data:image/png;base64,{img_str}")
+
     def to_dict(self) -> Dict[str, Any]:
         if self.url:
-            return {"url": self.url}
+            return {"type": "image_url", "image_url": {"url": self.url}}
         elif self.image:
             buffered = BytesIO()
             self.image.save(buffered, format="PNG")
             img_str = base64.b64encode(buffered.getvalue()).decode()
-            return {"url": f"data:image/png;base64,{img_str}"}
+            return {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img_str}"}}
         else:
-            return {}  # This ensures we always return a dictionary
+            return {}
 
 
 class TextContent(BaseModel):
@@ -75,6 +83,7 @@ class Message(BaseModel):
             for block in self.content
             if not isinstance(block, (ImageUrlContent, Image))
         ])
+
     @property
     def images(self) -> List[Union[Image, None]]:
         return [
@@ -85,6 +94,7 @@ class Message(BaseModel):
             for block in self.content
             if isinstance(block, (ImageUrlContent, Image)) or (isinstance(block, str) and is_valid_url(block))
         ]
+
 
 class StreamReturn:
   def __init__(self, generator: Generator[str, None, None], cancel_event: threading.Event):
@@ -362,7 +372,7 @@ class AI:
               # Handle file uploads
               formatted_content.append({"type": "file", "content": item[1]})
           elif isinstance(item, Image):
-              formatted_content.append(ImageUrlContent(image_url=item.to_dict()))
+              formatted_content.append(item.to_dict())
           elif isinstance(item, PILImage.Image):
               buffered = io.BytesIO()
               item.save(buffered, format="PNG")
@@ -372,9 +382,7 @@ class AI:
               formatted_content.append(ImageUrlContent(image_url={"url": item["url"]}))
           elif isinstance(item, bytes):
               try:
-                  # Try to open the image bytes with PIL
                   img = PILImage.open(io.BytesIO(item))
-                  # Convert to RGB if it's not already
                   if img.mode != 'RGB':
                       img = img.convert('RGB')
                   buffered = io.BytesIO()
@@ -392,27 +400,60 @@ class AI:
       return Message(role="assistant", content=[TextContent(text=content)])
 
 
-
 def _format_messages(content, system_prompt=None):
-  messages = []
-  if system_prompt:
-      messages.append({"role": "system", "content": system_prompt})
+    messages = []
+    if system_prompt:
+        messages.append({"role": "system", "content": [{"type": "text", "text": system_prompt}]})
 
-  if isinstance(content, list):
-      for item in content:
-          if isinstance(item, dict):
-              messages.append(item)
-          elif isinstance(item, Message):
-              messages.append(item.model_dump(mode='json'))
-  elif isinstance(content, str):
-      messages.append({"role": "user", "content": content})
-  elif isinstance(content, dict) and "role" in content:
-      messages.append(content)
-  elif isinstance(content, Message):
-      messages.append(content.model_dump(mode='json'))
+    if isinstance(content, list):
+        for item in content:
+            if isinstance(item, dict):
+                if "role" in item and "content" in item:
+                    if isinstance(item["content"], str):
+                        item["content"] = [{"type": "text", "text": item["content"]}]
+                    messages.append(item)
+                else:
+                    messages.append({"role": "user", "content": [{"type": "text", "text": str(item)}]})
+            elif isinstance(item, Message):
+                formatted_content = _format_message_content(item.content)
+                messages.append({"role": item.role, "content": formatted_content})
+            elif isinstance(item, str):
+                messages.append({"role": "user", "content": [{"type": "text", "text": item}]})
+            else:
+                messages.append({"role": "user", "content": [{"type": "text", "text": str(item)}]})
+    elif isinstance(content, str):
+        messages.append({"role": "user", "content": [{"type": "text", "text": content}]})
+    elif isinstance(content, dict) and "role" in content and "content" in content:
+        if isinstance(content["content"], str):
+            content["content"] = [{"type": "text", "text": content["content"]}]
+        messages.append(content)
+    elif isinstance(content, Message):
+        formatted_content = _format_message_content(content.content)
+        messages.append({"role": content.role, "content": formatted_content})
+    else:
+        messages.append({"role": "user", "content": [{"type": "text", "text": str(content)}]})
 
-  return messages
+    return messages
 
+def _format_message_content(content):
+    if isinstance(content, list):
+        return [_format_content_item(item) for item in content]
+    else:
+        return [_format_content_item(content)]
+
+def _format_content_item(item):
+    if isinstance(item, TextContent):
+        return {"type": "text", "text": item.text}
+    elif isinstance(item, ImageUrlContent):
+        return {"type": "image_url", "image_url": item.image_url}
+    elif isinstance(item, str):
+        return {"type": "text", "text": item}
+    elif isinstance(item, dict):
+        return item
+    elif isinstance(item, Image):
+        return item.to_dict()
+    else:
+        return {"type": "text", "text": str(item)}
 
 def system(content: str) -> Message:
   return Message(role="system", content=[TextContent(text=content)])
