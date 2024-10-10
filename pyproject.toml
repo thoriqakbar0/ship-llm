@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ship-llm"
-version = "0.0.5.3"
+version = "0.0.6"
 description = "Ship LLM: Ship Fast, Ship Now - Clean LLM Interface for Rapid Deployment"
 authors = ["Thoriq Akbar <thoriqakbar00@gmail.com>"]
 

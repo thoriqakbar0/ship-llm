@@ -23,6 +23,15 @@ IMAGE_URLS = [
     "https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/1280px-Real_Madrid_CF.svg.png"
 ]
 
+def get_image_bytes(url):
+    response = requests.get(url)
+    if response.status_code == 200:
+        print(f"Successfully downloaded {len(response.content)} bytes from {url}")
+        return response.content
+    else:
+        raise ValueError(f"Failed to fetch image from {url}")
+
+
 class SubjectClassifier(BaseModel):
     subject: Literal["Biology", "Chemistry", "Physics", "Earth Science", "Geography", "Science", "Botany"]
     confidence: float = Field(ge=0.0, le=1.0)
@@ -32,23 +41,119 @@ class StoryPart(BaseModel):
     part_number: int
     content: str
 
-def test_image_bytes_analysis():
-    # Download an image and get its bytes
-    image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
-    response = requests.get(image_url)
-    image_bytes = BytesIO(response.content).getvalue()
+class ImageAnalysis(BaseModel):
+    description: str
+    main_colors: List[str]
+    objects_detected: List[str]
+
+# test 1
+def test_image_file_analysis():
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    path_to_image = os.path.join(base_dir, 'tests', 'out-0-3.png')
+
+    # Check if the file exists
+    if not os.path.exists(path_to_image):
+        pytest.skip(f"Test image not found at {path_to_image}")
 
     @ai.text()
-    def image_bytes_analysis():
+    def image_file_analysis(image_path):
         """You are an image analysis AI. Describe the image in detail."""
-        return ai.user("Describe this image:", image_bytes)
+        return ai.user("Describe this image:", image_path)
 
-    result = image_bytes_analysis()
+    result = image_file_analysis(path_to_image)
     assert isinstance(result, str)
     assert len(result) > 0
-    assert "wooden" in result.lower() or "boardwalk" in result.lower() or "nature" in result.lower()
+    # Add more specific assertions based on the content of your test image
     print(f"Image analysis result: {result}")
 
+def test_structured_image_analysis():
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    path_to_image = os.path.join(base_dir, 'tests', 'out-0-3.png')
+
+    # Check if the file exists
+    if not os.path.exists(path_to_image):
+        pytest.skip(f"Test image not found at {path_to_image}")
+
+    # Function to read image file and convert to bytes
+    def get_image_bytes(file_path):
+        with open(file_path, 'rb') as image_file:
+            return image_file.read()
+
+    # Get image bytes
+    image_bytes = get_image_bytes(path_to_image)
+
+    @ai.structured(ImageAnalysis)
+    def analyze_image(image: bytes):
+        """
+        You are an advanced image analysis AI. Analyze the given image and provide a detailed description,
+        list of main colors, and objects detected.
+
+        use natural language for color
+        """
+        return ai.user("Analyze this image in detail:", image)
+
+    result = analyze_image(image_bytes)
+
+    assert isinstance(result, ImageAnalysis)
+    assert len(result.description) > 0
+    assert len(result.main_colors) > 0
+    assert len(result.objects_detected) > 0
+
+    print("Image Analysis Result:")
+    print(f"Description: {result.description}")
+    print(f"Main Colors: {', '.join(result.main_colors)}")
+    print(f"Objects Detected: {', '.join(result.objects_detected)}")
+
+    # Additional assertions based on the known content of the image
+    # Note: You might need to adjust these assertions based on the actual content of your test image
+    assert any(keyword in result.description.lower() for keyword in ["kitchen", "cooking", "chef", "food"])
+    assert any(color in ["yellow", "orange", "blue", "green"] for color in result.main_colors)
+    assert any(obj in ["cartoon character", "pan", "pot", "plant", "framed picture"] for obj in result.objects_detected)
+
+def test_structured_image_analysis_with_conversation():
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    path_to_image = os.path.join(base_dir, 'tests', 'out-0-3.png')
+
+    # Check if the file exists
+    if not os.path.exists(path_to_image):
+        pytest.skip(f"Test image not found at {path_to_image}")
+
+    # Function to read image file and convert to bytes
+    def get_image_bytes(file_path):
+        with open(file_path, 'rb') as image_file:
+            return image_file.read()
+
+    # Get image bytes
+    image_bytes = get_image_bytes(path_to_image)
+
+    @ai.structured(ImageAnalysis)
+    def analyze_images_in_conversation(image1: bytes):
+        """
+        You are an advanced image analysis AI. Analyze the given images and provide a detailed description,
+        list of main colors, and objects detected for each image. Compare and contrast the two images.
+        """
+        return [
+            ai.system("You are an expert in image analysis. Provide detailed information about the images and compare them."),
+            ai.user("Analyze this first image:", image1),
+        ]
+
+    result = analyze_images_in_conversation(image_bytes)
+
+    assert isinstance(result, ImageAnalysis)
+    assert len(result.description) > 0
+    assert len(result.main_colors) > 0
+    assert len(result.objects_detected) > 0
+
+    print("Image Analysis Result")
+    print(f"Description: {result.description}")
+    print(f"Main Colors: {', '.join(result.main_colors)}")
+    print(f"Objects Detected: {', '.join(result.objects_detected)}")
+
+    # Assertions for the image
+    # Note: You might need to adjust these assertions based on the actual content of your test image
+    assert any(keyword in result.description.lower() for keyword in ["kitchen", "cooking", "chef", "food"])
+    assert any(color in ["yellow", "orange", "blue", "green"] for color in result.main_colors)
+    assert any(obj in ["cartoon character", "pan", "pot", "plant", "framed picture"] for obj in result.objects_detected)
 
 def test_simplified_docstring_mismatch():
     ai = AI()

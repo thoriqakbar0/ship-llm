@@ -13,6 +13,7 @@ from typing import get_type_hints
 from PIL import Image as PILImage
 import base64
 from io import BytesIO
+import io
 
 OpenAIClient = Union[OpenAI, AzureOpenAI]
 T = TypeVar('T', bound=BaseModel)
@@ -102,6 +103,8 @@ class StreamReturn:
 def type_to_string(typ):
     if typ is Any:
         return "Any"
+    if hasattr(typ, "__name__"):
+        return typ.__name__
     origin = get_origin(typ)
     if origin is Union:
         return f"Union[{', '.join(type_to_string(arg) for arg in get_args(typ))}]"
@@ -110,7 +113,7 @@ def type_to_string(typ):
         if args:
             return f"{origin.__name__}[{', '.join(type_to_string(arg) for arg in args)}]"
         return origin.__name__
-    return getattr(typ, '__name__', str(typ))
+    return str(typ)
 
 def templated_docstring(template):
     def decorator(func):
@@ -346,31 +349,44 @@ class AI:
           return Message(role="system", content=[TextContent(text=content)])
 
   def user(self, *content: Union[str, AnyUrl, Dict[str, Any], Image, PILImage.Image, Tuple[str, Dict[str, Any]], bytes]) -> Message:
-          formatted_content = []
-          for item in content:
-              if isinstance(item, str):
-                  if is_valid_url(item):
-                      formatted_content.append(ImageUrlContent(image_url={"url": item}))
-                  else:
-                      formatted_content.append(TextContent(text=item))
-              elif isinstance(item, AnyUrl):
-                  formatted_content.append(ImageUrlContent(image_url={"url": str(item)}))
-              elif isinstance(item, tuple) and len(item) == 2 and isinstance(item[0], str) and isinstance(item[1], dict):
-                  # Handle file uploads
-                  formatted_content.append({"type": "file", "content": item[1]})
-              elif isinstance(item, Image):
-                  formatted_content.append(ImageUrlContent(image_url=item.to_dict()))
-              elif isinstance(item, PILImage.Image):
-                  formatted_content.append(ImageUrlContent(image_url=Image(image=item).to_dict()))
-              elif isinstance(item, dict) and "url" in item:
-                  formatted_content.append(ImageUrlContent(image_url={"url": item["url"]}))
-              elif isinstance(item, bytes):
-                  # Convert bytes to base64-encoded image
-                  base64_image = base64.b64encode(item).decode('utf-8')
-                  formatted_content.append(ImageUrlContent(image_url={"url": f"data:image/jpeg;base64,{base64_image}"}))
+      formatted_content = []
+      for item in content:
+          if isinstance(item, str):
+              if is_valid_url(item):
+                  formatted_content.append(ImageUrlContent(image_url={"url": item}))
               else:
-                  formatted_content.append(TextContent(text=str(item)))
-          return Message(role="user", content=formatted_content)
+                  formatted_content.append(TextContent(text=item))
+          elif isinstance(item, AnyUrl):
+              formatted_content.append(ImageUrlContent(image_url={"url": str(item)}))
+          elif isinstance(item, tuple) and len(item) == 2 and isinstance(item[0], str) and isinstance(item[1], dict):
+              # Handle file uploads
+              formatted_content.append({"type": "file", "content": item[1]})
+          elif isinstance(item, Image):
+              formatted_content.append(ImageUrlContent(image_url=item.to_dict()))
+          elif isinstance(item, PILImage.Image):
+              buffered = io.BytesIO()
+              item.save(buffered, format="PNG")
+              img_str = base64.b64encode(buffered.getvalue()).decode()
+              formatted_content.append(ImageUrlContent(image_url={"url": f"data:image/png;base64,{img_str}"}))
+          elif isinstance(item, dict) and "url" in item:
+              formatted_content.append(ImageUrlContent(image_url={"url": item["url"]}))
+          elif isinstance(item, bytes):
+              try:
+                  # Try to open the image bytes with PIL
+                  img = PILImage.open(io.BytesIO(item))
+                  # Convert to RGB if it's not already
+                  if img.mode != 'RGB':
+                      img = img.convert('RGB')
+                  buffered = io.BytesIO()
+                  img.save(buffered, format="PNG")
+                  img_str = base64.b64encode(buffered.getvalue()).decode()
+                  formatted_content.append(ImageUrlContent(image_url={"url": f"data:image/png;base64,{img_str}"}))
+              except Exception as e:
+                  raise ValueError(f"Failed to process image bytes: {str(e)}")
+          else:
+              formatted_content.append(TextContent(text=str(item)))
+      return Message(role="user", content=formatted_content)
+
 
   def assistant(self, content: str) -> Message:
       return Message(role="assistant", content=[TextContent(text=content)])
