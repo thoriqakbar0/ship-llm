@@ -2,7 +2,7 @@ from functools import wraps, lru_cache
 from pydantic import BaseModel, ConfigDict
 from pydantic.networks import AnyUrl
 import instructor
-from typing import List, Union, Literal, Optional, Any, Generator, TypeVar, Callable, Type, overload, Dict, Tuple
+from typing import List, Union, Literal, Optional, Any, Generator, TypeVar, Callable, Type, overload, Dict, Tuple, get_origin, get_args
 import threading
 from openai import AzureOpenAI, OpenAI
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
@@ -99,29 +99,45 @@ class StreamReturn:
   def __getitem__(self, index):
       return next(self.generator)
 
+def type_to_string(typ):
+    if typ is Any:
+        return "Any"
+    origin = get_origin(typ)
+    if origin is Union:
+        return f"Union[{', '.join(type_to_string(arg) for arg in get_args(typ))}]"
+    if origin:
+        args = get_args(typ)
+        if args:
+            return f"{origin.__name__}[{', '.join(type_to_string(arg) for arg in args)}]"
+        return origin.__name__
+    return getattr(typ, '__name__', str(typ))
 
 def templated_docstring(template):
-  def decorator(func):
-      sig = inspect.signature(func)
-      type_hints = get_type_hints(func)
+    def decorator(func):
+        sig = inspect.signature(func)
+        type_hints = get_type_hints(func)
 
-      param_docs = []
-      for name, param in sig.parameters.items():
-          param_type = type_hints.get(name, Any).__name__
-          default = param.default if param.default is not param.empty else None
-          param_docs.append(f"{name} ({param_type}): Description for {name}")
-          if default is not None:
-              param_docs[-1] += f" (default: {default})"
+        param_docs = []
+        for name, param in sig.parameters.items():
+            param_type = type_hints.get(name, Any)
+            param_type_str = type_to_string(param_type)
+            default = param.default if param.default is not param.empty else None
+            param_docs.append(f"{name} ({param_type_str}): Description for {name}")
+            if default is not None:
+                param_docs[-1] += f" (default: {default})"
 
-      param_doc = "\n    ".join(param_docs)
+        param_doc = "\n    ".join(param_docs)
 
-      func.__doc__ = template.format(
-          func_name=func.__name__,
-          params=param_doc,
-          return_type=type_hints.get('return', Any).__name__
-      )
-      return func
-  return decorator
+        return_type = type_hints.get('return', Any)
+        return_type_str = type_to_string(return_type)
+
+        func.__doc__ = template.format(
+            func_name=func.__name__,
+            params=param_doc,
+            return_type=return_type_str
+        )
+        return func
+    return decorator
 
 
 class AI:
