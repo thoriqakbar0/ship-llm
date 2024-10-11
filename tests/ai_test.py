@@ -46,6 +46,35 @@ class ImageAnalysis(BaseModel):
     main_colors: List[str]
     objects_detected: List[str]
 
+def test_complex_url():
+    image_url = "https://sgp1.digitaloceanspaces.com/semarak/kumon/q/year_1/A1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=DO00Y4KNWMQXEXFNQC6X%2F20241011%2Fsgp1%2Fs3%2Faws4_request&X-Amz-Date=20241011T002212Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=754553fe9706f80a1f693ed542415f6eb2d734943c699be4e336e18ff32dbfbb"
+
+    @ai.structured(ImageAnalysis)
+    def analyze_external_image(image_url: str):
+        """
+        You are an advanced image analysis AI. Analyze the given image and provide a detailed description,
+        list of main colors, and objects detected.
+        also mention the logo you see
+        """
+        return ai.user("Analyze this image in detail:", image_url)
+
+    result = analyze_external_image(image_url)
+
+    assert isinstance(result, ImageAnalysis)
+    assert len(result.description) > 0
+    assert len(result.main_colors) > 0
+    assert len(result.objects_detected) > 0
+
+    print("External Image Analysis Result:")
+    print(f"Description: {result.description}")
+    print(f"Main Colors: {', '.join(result.main_colors)}")
+    print(f"Objects Detected: {', '.join(result.objects_detected)}")
+
+    # Add assertions based on the expected content of the image
+    assert any(keyword in result.description.lower() for keyword in ["pandai"])
+    assert any(color in ["turquoise", "yellow"] for color in result.main_colors)
+    assert any(obj in ["logo", "buttons", "text"] for obj in result.objects_detected)
+
 # test 1
 def test_image_file_analysis():
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

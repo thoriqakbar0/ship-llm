@@ -1,19 +1,17 @@
 from functools import wraps, lru_cache
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ValidationError
 from pydantic.networks import AnyUrl
 import instructor
-from typing import List, Union, Literal, Optional, Any, Generator, TypeVar, Callable, Type, overload, Dict, Tuple, get_origin, get_args
+from typing import List, Union, Literal, Optional, Any, Generator, TypeVar, Callable, Type, overload
 import threading
 from openai import AzureOpenAI, OpenAI
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
+from openai.types.chat.completion_create_params import CompletionCreateParamsNonStreaming, CompletionCreateParamsStreaming
 import re
 from openai.types import ChatModel
+from urllib.parse import urlparse
 import inspect
 from typing import get_type_hints
-from PIL import Image as PILImage
-import base64
-from io import BytesIO
-import io
 
 OpenAIClient = Union[OpenAI, AzureOpenAI]
 T = TypeVar('T', bound=BaseModel)
@@ -33,67 +31,28 @@ URL_REGEX = re.compile(
   r'(?:/?|[/?]\S+)$', re.IGNORECASE
 )
 
-class Image(BaseModel):
-    url: Optional[str] = None
-    image: Optional[PILImage.Image] = None
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    def __init__(self, **data):
-        super().__init__(**data)
-        if self.url is None and self.image is None:
-            raise ValueError("Either url or image must be provided")
-
-    @classmethod
-    def from_path(cls, path: str):
-        with PILImage.open(path) as img:
-            buffered = BytesIO()
-            img.save(buffered, format="PNG")
-            img_str = base64.b64encode(buffered.getvalue()).decode()
-            return cls(url=f"data:image/png;base64,{img_str}")
-
-    def to_dict(self) -> Dict[str, Any]:
-        if self.url:
-            return {"type": "image_url", "image_url": {"url": self.url}}
-        elif self.image:
-            buffered = BytesIO()
-            self.image.save(buffered, format="PNG")
-            img_str = base64.b64encode(buffered.getvalue()).decode()
-            return {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img_str}"}}
-        else:
-            return {}
-
 
 class TextContent(BaseModel):
-    type: Literal["text"] = "text"
-    text: str
+  type: Literal["text"] = "text"
+  text: str
+
 
 class ImageUrlContent(BaseModel):
-    type: Literal["image_url"] = "image_url"
-    image_url: Dict[str, str]
+  type: Literal["image_url"] = "image_url"
+  image_url: dict
+
 
 class Message(BaseModel):
-    role: Literal["system", "user", "assistant"]
-    content: List[Union[TextContent, ImageUrlContent, str, Image, Dict[str, Any]]]
+  role: Literal["system", "user", "assistant"]
+  content: List[Union[TextContent, ImageUrlContent]]
 
-    @property
-    def text(self) -> str:
-        return " ".join([
-            block.text if isinstance(block, TextContent) else str(block)
-            for block in self.content
-            if not isinstance(block, (ImageUrlContent, Image))
-        ])
+  @property
+  def text(self) -> str:
+      return " ".join([block.text for block in self.content if isinstance(block, TextContent)])
 
-    @property
-    def images(self) -> List[Union[Image, None]]:
-        return [
-            Image(url=block.image_url["url"]) if isinstance(block, ImageUrlContent)
-            else block if isinstance(block, Image)
-            else Image(url=block) if isinstance(block, str) and is_valid_url(block)
-            else None
-            for block in self.content
-            if isinstance(block, (ImageUrlContent, Image)) or (isinstance(block, str) and is_valid_url(block))
-        ]
+  @property
+  def images(self) -> List[str]:
+      return [block.image_url["url"] for block in self.content if isinstance(block, ImageUrlContent)]
 
 
 class StreamReturn:
@@ -110,53 +69,35 @@ class StreamReturn:
   def __getitem__(self, index):
       return next(self.generator)
 
-def type_to_string(typ):
-    if typ is Any:
-        return "Any"
-    if hasattr(typ, "__name__"):
-        return typ.__name__
-    origin = get_origin(typ)
-    if origin is Union:
-        return f"Union[{', '.join(type_to_string(arg) for arg in get_args(typ))}]"
-    if origin:
-        args = get_args(typ)
-        if args:
-            return f"{origin.__name__}[{', '.join(type_to_string(arg) for arg in args)}]"
-        return origin.__name__
-    return str(typ)
 
 def templated_docstring(template):
-    def decorator(func):
-        sig = inspect.signature(func)
-        type_hints = get_type_hints(func)
+  def decorator(func):
+      sig = inspect.signature(func)
+      type_hints = get_type_hints(func)
 
-        param_docs = []
-        for name, param in sig.parameters.items():
-            param_type = type_hints.get(name, Any)
-            param_type_str = type_to_string(param_type)
-            default = param.default if param.default is not param.empty else None
-            param_docs.append(f"{name} ({param_type_str}): Description for {name}")
-            if default is not None:
-                param_docs[-1] += f" (default: {default})"
+      param_docs = []
+      for name, param in sig.parameters.items():
+          param_type = type_hints.get(name, Any).__name__
+          default = param.default if param.default is not param.empty else None
+          param_docs.append(f"{name} ({param_type}): Description for {name}")
+          if default is not None:
+              param_docs[-1] += f" (default: {default})"
 
-        param_doc = "\n    ".join(param_docs)
+      param_doc = "\n    ".join(param_docs)
 
-        return_type = type_hints.get('return', Any)
-        return_type_str = type_to_string(return_type)
-
-        func.__doc__ = template.format(
-            func_name=func.__name__,
-            params=param_doc,
-            return_type=return_type_str
-        )
-        return func
-    return decorator
+      func.__doc__ = template.format(
+          func_name=func.__name__,
+          params=param_doc,
+          return_type=type_hints.get('return', Any).__name__
+      )
+      return func
+  return decorator
 
 
 class AI:
   def __init__(self, client: Optional[OpenAIClient] = None, model: Optional[Union[str, ChatModel]] = None):
       self.client: Optional[OpenAIClient] = client
-      self.json_client = instructor.from_openai(client) if client else None
+      self.json_client = instructor.patch(client) if client else None
       self.model: Optional[Union[str, ChatModel]] = model
       self.active_stream: Optional[threading.Event] = None
 
@@ -355,105 +296,27 @@ class AI:
           self.active_stream.set()
           self.active_stream = None
 
-  def system(self, content: str) -> Message:
-          return Message(role="system", content=[TextContent(text=content)])
-
-  def user(self, *content: Union[str, AnyUrl, Dict[str, Any], Image, PILImage.Image, Tuple[str, Dict[str, Any]], bytes]) -> Message:
-      formatted_content = []
-      for item in content:
-          if isinstance(item, str):
-              if is_valid_url(item):
-                  formatted_content.append(ImageUrlContent(image_url={"url": item}))
-              else:
-                  formatted_content.append(TextContent(text=item))
-          elif isinstance(item, AnyUrl):
-              formatted_content.append(ImageUrlContent(image_url={"url": str(item)}))
-          elif isinstance(item, tuple) and len(item) == 2 and isinstance(item[0], str) and isinstance(item[1], dict):
-              # Handle file uploads
-              formatted_content.append({"type": "file", "content": item[1]})
-          elif isinstance(item, Image):
-              formatted_content.append(item.to_dict())
-          elif isinstance(item, PILImage.Image):
-              buffered = io.BytesIO()
-              item.save(buffered, format="PNG")
-              img_str = base64.b64encode(buffered.getvalue()).decode()
-              formatted_content.append(ImageUrlContent(image_url={"url": f"data:image/png;base64,{img_str}"}))
-          elif isinstance(item, dict) and "url" in item:
-              formatted_content.append(ImageUrlContent(image_url={"url": item["url"]}))
-          elif isinstance(item, bytes):
-              try:
-                  img = PILImage.open(io.BytesIO(item))
-                  if img.mode != 'RGB':
-                      img = img.convert('RGB')
-                  buffered = io.BytesIO()
-                  img.save(buffered, format="PNG")
-                  img_str = base64.b64encode(buffered.getvalue()).decode()
-                  formatted_content.append(ImageUrlContent(image_url={"url": f"data:image/png;base64,{img_str}"}))
-              except Exception as e:
-                  raise ValueError(f"Failed to process image bytes: {str(e)}")
-          else:
-              formatted_content.append(TextContent(text=str(item)))
-      return Message(role="user", content=formatted_content)
-
-
-  def assistant(self, content: str) -> Message:
-      return Message(role="assistant", content=[TextContent(text=content)])
-
 
 def _format_messages(content, system_prompt=None):
-    messages = []
-    if system_prompt:
-        messages.append({"role": "system", "content": [{"type": "text", "text": system_prompt}]})
+  messages = []
+  if system_prompt:
+      messages.append({"role": "system", "content": system_prompt})
 
-    if isinstance(content, list):
-        for item in content:
-            if isinstance(item, dict):
-                if "role" in item and "content" in item:
-                    if isinstance(item["content"], str):
-                        item["content"] = [{"type": "text", "text": item["content"]}]
-                    messages.append(item)
-                else:
-                    messages.append({"role": "user", "content": [{"type": "text", "text": str(item)}]})
-            elif isinstance(item, Message):
-                formatted_content = _format_message_content(item.content)
-                messages.append({"role": item.role, "content": formatted_content})
-            elif isinstance(item, str):
-                messages.append({"role": "user", "content": [{"type": "text", "text": item}]})
-            else:
-                messages.append({"role": "user", "content": [{"type": "text", "text": str(item)}]})
-    elif isinstance(content, str):
-        messages.append({"role": "user", "content": [{"type": "text", "text": content}]})
-    elif isinstance(content, dict) and "role" in content and "content" in content:
-        if isinstance(content["content"], str):
-            content["content"] = [{"type": "text", "text": content["content"]}]
-        messages.append(content)
-    elif isinstance(content, Message):
-        formatted_content = _format_message_content(content.content)
-        messages.append({"role": content.role, "content": formatted_content})
-    else:
-        messages.append({"role": "user", "content": [{"type": "text", "text": str(content)}]})
+  if isinstance(content, list):
+      for item in content:
+          if isinstance(item, dict):
+              messages.append(item)
+          elif isinstance(item, Message):
+              messages.append(item.model_dump(mode='json'))
+  elif isinstance(content, str):
+      messages.append({"role": "user", "content": content})
+  elif isinstance(content, dict) and "role" in content:
+      messages.append(content)
+  elif isinstance(content, Message):
+      messages.append(content.model_dump(mode='json'))
 
-    return messages
+  return messages
 
-def _format_message_content(content):
-    if isinstance(content, list):
-        return [_format_content_item(item) for item in content]
-    else:
-        return [_format_content_item(content)]
-
-def _format_content_item(item):
-    if isinstance(item, TextContent):
-        return {"type": "text", "text": item.text}
-    elif isinstance(item, ImageUrlContent):
-        return {"type": "image_url", "image_url": item.image_url}
-    elif isinstance(item, str):
-        return {"type": "text", "text": item}
-    elif isinstance(item, dict):
-        return item
-    elif isinstance(item, Image):
-        return item.to_dict()
-    else:
-        return {"type": "text", "text": str(item)}
 
 def system(content: str) -> Message:
   return Message(role="system", content=[TextContent(text=content)])
