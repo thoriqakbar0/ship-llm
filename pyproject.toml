@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "ship-llm"
-version = "0.0.7"
+version = "0.0.8"
 description = "Ship LLM: Ship Fast, Ship Now - Clean LLM Interface for Rapid Deployment"
 authors = ["Thoriq Akbar <thoriqakbar00@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-instructor = "*"
+instructor = "1.5.0"
 openai = "*"
 pydantic = "*"
 requests = "^2.32.3"
