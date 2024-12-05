@@ -1,0 +1,8 @@
+openai
+instructor
+backoff
+python-dotenv
+requests
+pillow
+pytest-asyncio
+aiohttp

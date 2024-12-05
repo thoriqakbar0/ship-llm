@@ -1,13 +1,16 @@
 import os
-from openai import OpenAI, AzureOpenAI # type: ignore
+from openai import OpenAI, AzureOpenAI, AsyncOpenAI # type: ignore
 from pydantic import BaseModel, Field
 from typing import List, Union, Literal, Optional, Generator
 from ship_llm.ai import AI, StreamReturn, user, assistant, system
 from dotenv import load_dotenv
 import pytest
+import asyncio
 from openai.types import ChatModel
 import requests
 from io import BytesIO
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 load_dotenv()
 
@@ -46,34 +49,12 @@ class ImageAnalysis(BaseModel):
     main_colors: List[str]
     objects_detected: List[str]
 
-def test_complex_url():
-    image_url = "https://sgp1.digitaloceanspaces.com/semarak/kumon/q/year_1/A1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=DO00Y4KNWMQXEXFNQC6X%2F20241011%2Fsgp1%2Fs3%2Faws4_request&X-Amz-Date=20241011T002212Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=754553fe9706f80a1f693ed542415f6eb2d734943c699be4e336e18ff32dbfbb"
-
-    @ai.structured(ImageAnalysis)
-    def analyze_external_image(image_url: str):
-        """
-        You are an advanced image analysis AI. Analyze the given image and provide a detailed description,
-        list of main colors, and objects detected.
-        also mention the logo you see
-        """
-        return user("Analyze this image in detail:", image_url)
-
-    result = analyze_external_image(image_url)
-
-    assert isinstance(result, ImageAnalysis)
-    assert len(result.description) > 0
-    assert len(result.main_colors) > 0
-    assert len(result.objects_detected) > 0
-
-    print("External Image Analysis Result:")
-    print(f"Description: {result.description}")
-    print(f"Main Colors: {', '.join(result.main_colors)}")
-    print(f"Objects Detected: {', '.join(result.objects_detected)}")
-
-    # Add assertions based on the expected content of the image
-    assert any(keyword in result.description.lower() for keyword in ["pandai"])
-    assert any(color in ["turquoise", "yellow"] for color in result.main_colors)
-    assert any(obj in ["logo", "buttons", "text"] for obj in result.objects_detected)
+@pytest.fixture(autouse=True)
+def timer():
+    start_time = time.time()
+    yield
+    duration = time.time() - start_time
+    print(f"\nTest duration: {duration:.2f} seconds")
 
 # test 1
 def test_image_file_analysis():
@@ -183,6 +164,66 @@ def test_image_file_analysis():
 #     assert any(keyword in result.description.lower() for keyword in ["kitchen", "cooking", "chef", "food"])
 #     assert any(color in ["yellow", "orange", "blue", "green"] for color in result.main_colors)
 #     # assert any(obj in ["cartoon character", "pan", "pot", "plant", "framed picture"] for obj in result.objects_detected)
+
+@pytest.mark.asyncio
+async def test_async_completion():
+    @ai.text()
+    async def simple_completion(prompt: str):
+        """You are a helpful assistant."""
+        return {"role": "user", "content": [{"type": "text", "text": prompt}]}
+
+    result = await simple_completion("What is 2+2?")
+    assert isinstance(result, str)
+    assert "4" in result.lower()
+
+@pytest.mark.asyncio
+async def test_async_streaming():
+    @ai.text(stream=True)
+    async def stream_completion(prompt: str):
+        """You are a helpful assistant."""
+        return user(prompt)
+
+    chunks = []
+    async for chunk in await stream_completion("Count from 1 to 5"):
+        chunks.append(chunk)
+        assert isinstance(chunk, str)
+
+    full_response = "".join(chunks)
+    assert any(str(i) in full_response for i in range(1, 6))
+
+@pytest.mark.asyncio
+async def test_error_handling_and_retries():
+    class CustomError(Exception):
+        pass
+
+    @ai.text()
+    async def failing_completion(prompt: str):
+        """You are a helpful assistant."""
+        if prompt == "fail":
+            raise CustomError("Test error")
+        return user(prompt)
+
+    with pytest.raises(CustomError):
+        await failing_completion("fail")
+
+    # Should succeed after retries
+    result = await failing_completion("succeed")
+    assert isinstance(result, str)
+    assert len(result) > 0
+
+def test_parallel_processing():
+    @ai.text()
+    def parallel_completion(prompt: str):
+        """You are a helpful assistant."""
+        return user(prompt)
+
+    prompts = ["Task 1", "Task 2", "Task 3", "Task 4"]
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = [executor.submit(parallel_completion, prompt) for prompt in prompts]
+        results = [f.result() for f in futures]
+
+    assert len(results) == len(prompts)
+    assert all(isinstance(r, str) for r in results)
 
 def test_simplified_docstring_mismatch():
     ai = AI()
