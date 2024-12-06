@@ -51,7 +51,13 @@ class AsyncClient(BaseClient):
             **kwargs
         }
 
-        return await self.client.chat.completions.create(**params)
+        if stream:
+            async def stream_response():
+                async for chunk in await self.client.chat.completions.create(**params):
+                    yield chunk
+            return stream_response()
+        else:
+            return await self.client.chat.completions.create(**params)
     
     async def complete_structured(
         self,
@@ -73,24 +79,29 @@ class AsyncClient(BaseClient):
         }
 
         if not stream:
-            return await self.json_client.chat.completions.create(
+            result = await self.json_client.chat.completions.create(
                 response_model=response_format,
                 **params
             )
+            return result
         elif stream_mode == "partial":
-            response = self.json_client.chat.completions.create_partial(
-                response_model=response_format,
-                **params
-            )
-            async for chunk in response:
-                if chunk is not None:
-                    yield chunk
+            async def stream_partial():
+                response = self.json_client.chat.completions.create_partial(
+                    response_model=response_format,
+                    **params
+                )
+                async for chunk in response:
+                    if chunk is not None:
+                        yield chunk
+            return stream_partial()
         else:  # stream_mode == "iterable"
-            async for chunk in self.json_client.chat.completions.create_iterable(
-                response_model=response_format,
-                **params
-            ):
-                yield chunk
+            async def stream_iterable():
+                async for chunk in self.json_client.chat.completions.create_iterable(
+                    response_model=response_format,
+                    **params
+                ):
+                    yield chunk
+            return stream_iterable()
 
 class SyncClient(BaseClient):
     @backoff.on_exception(backoff.expo, Exception, max_tries=3)

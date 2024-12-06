@@ -2,7 +2,7 @@ import os
 from openai import OpenAI, AzureOpenAI, AsyncOpenAI # type: ignore
 from pydantic import BaseModel, Field
 from typing import List, Union, Literal, Optional, Generator
-from ship_llm.ai import AI, StreamReturn, user, assistant, system
+from ship_llm import AI, StreamReturn, user, assistant, system
 from dotenv import load_dotenv
 import pytest
 import asyncio
