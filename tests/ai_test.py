@@ -385,6 +385,17 @@ def test_multiple_images():
     assert isinstance(result, str)
     assert "nature" or "natural" in result.lower() and "logo" in result.lower()
 
+def test_single_images():
+    @ai.text()
+    def single_images():
+        """You are an image comparison AI. Compare and contrast the given images."""
+        return user("Compare this image:", IMAGE_URLS[0])
+
+    result = single_images()
+    print(result)
+    assert isinstance(result, str)
+    assert "nature" or "natural" in result.lower()
+
 def test_structured_streaming():
     @ai.structured(StoryPart, stream=True, stream_mode="partial")
     def partial_streaming():
@@ -504,6 +515,16 @@ def test_structured_streaming_iterable():
         assert isinstance(part, StoryPart)
         assert part.part_number is not None
         assert part.content is not None
+
+def test_chat():
+    @ai.text()
+    def chat():
+        """You are a helpful assistant."""
+        return user("Hi, I'm planning a trip to Paris.")
+
+    result = chat()
+    assert isinstance(result, str)
+    assert "paris" in result.lower()
 
 if __name__ == "__main__":
     pytest.main()

@@ -19,41 +19,59 @@ def is_valid_url(url: str) -> bool:
     except:
         return False
 
-def format_messages(content: Union[str, List[Union[str, dict]], Message], system_prompt: str = None) -> List[Message]:
-    """Format content into a list of messages for the AI"""
+def format_messages(content: Union[str, List[Union[str, dict, Message]], Message], system_prompt: str = None) -> List[Message]:
+    """
+    Format content into a list of messages for the AI.
+    Handles text and image content following OpenAI's multimodal format.
+    
+    Args:
+        content: Input content (str, list, dict, or Message)
+        system_prompt: Optional system prompt
+        
+    Returns:
+        List[Message]: Formatted messages for the AI
+    """
+    # Pre-allocate messages list with initial capacity
     messages = []
     
-    # Add system prompt if provided
+    # Add system prompt if provided (most common case first)
     if system_prompt:
-        messages.append(Message(
-            role="system",
-            content=[TextContent(text=system_prompt)]
-        ))
-    
-    # Handle different content types
+        messages.append(system(system_prompt))
+
+    # Fast path for single string/message (most common case)
     if isinstance(content, str):
-        messages.append(Message(
-            role="user",
-            content=[TextContent(text=content)]
-        ))
-    elif isinstance(content, Message):
-        messages.append(content)
-    elif isinstance(content, list):
-        for item in content:
-            if isinstance(item, str):
-                messages.append(Message(
-                    role="user",
-                    content=[TextContent(text=item)]
-                ))
-            elif isinstance(item, dict):
-                messages.append(Message(**item))
-            elif isinstance(item, Message):
-                messages.append(item)
-            else:
-                raise ValueError(f"Invalid content type: {type(item)}. Expected str, dict, or Message.")
-    else:
-        raise ValueError(f"Invalid content type: {type(content)}. Expected str, list, dict, or Message.")
+        messages.append(user(content))
+        return messages
     
+    if isinstance(content, Message):
+        messages.append(content)
+        return messages
+
+    # Handle list or dict content
+    if isinstance(content, dict):
+        content = [content]
+    elif not isinstance(content, list):
+        raise ValueError(f"Invalid content type: {type(content)}. Expected str, list, dict, or Message.")
+
+    # Process list content with type checking
+    role_handlers = {
+        "system": system,
+        "assistant": assistant,
+        "user": user
+    }
+
+    for item in content:
+        if isinstance(item, Message):
+            messages.append(item)
+        elif isinstance(item, str):
+            messages.append(user(item))
+        elif isinstance(item, dict):
+            # Handle OpenAI message format
+            role = item.get("role", "user")
+            content_data = item.get("content", "")
+            handler = role_handlers.get(role, user)
+            messages.append(handler(content_data))
+
     return messages
 
 def user(*content: Union[str, Any]) -> Message:
@@ -62,7 +80,9 @@ def user(*content: Union[str, Any]) -> Message:
     for item in content:
         if isinstance(item, str):
             if is_valid_url(item):
-                message_content.append(ImageUrlContent(image_url=item))
+                message_content.append(ImageUrlContent(
+                    image_url={"url": item}
+                ))
             else:
                 message_content.append(TextContent(text=item))
         else:

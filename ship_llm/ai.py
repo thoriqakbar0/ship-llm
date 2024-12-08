@@ -46,86 +46,74 @@ class AI:
     ) -> Callable[[Callable[..., Any]], Callable[..., Union[str, StreamReturn, AsyncGenerator[str, None]]]]:
         """Decorator for text completion functions."""
         def decorator(func: Callable[..., Any]) -> Callable[..., Union[str, StreamReturn, AsyncGenerator[str, None]]]:
-            @wraps(func)
-            async def async_wrapper(*args, **kwargs) -> Union[str, AsyncGenerator[str, None]]:
-                if not self.async_client:
-                    raise ValueError("AsyncClient not initialized. Use AsyncOpenAI or AsyncAzureOpenAI client.")
-                
-                # Get system prompt from docstring
-                system_prompt = func.__doc__.strip() if func.__doc__ else None
-                
-                # Execute the function
-                content = await func(*args, **kwargs)
-                messages = format_messages(content, system_prompt)
-                
-                # Check cache for non-streaming requests
-                if use_cache and not stream:
-                    cache_key = create_cache_key({"messages": messages, "model": model or self.model})
-                    cached_result = self._completion_cache.get(cache_key)
-                    if cached_result:
-                        return cached_result.choices[0].message.content or ""
+            is_async = asyncio.iscoroutinefunction(func)
 
-                # Execute completion
-                response = await self.async_client.complete(
-                    messages=messages,
-                    stream=stream,
-                    model=model or self.model,
-                    **llm_params
-                )
-
-                if stream:
-                    return self.stream_manager.create_async_stream_generator(response)
-                else:
-                    if response.choices:
-                        self._completion_cache.put(cache_key, response)
-                        return response.choices[0].message.content or ""
-                    return ""
-
-            @wraps(func)
-            def sync_wrapper(*args, **kwargs) -> Union[str, StreamReturn]:
-                if not self.sync_client:
-                    raise ValueError("SyncClient not initialized. Use OpenAI or AzureOpenAI client.")
-                
-                # Get system prompt from docstring
-                system_prompt = func.__doc__.strip() if func.__doc__ else None
-                
-                # Handle async/sync functions
-                if asyncio.iscoroutinefunction(func):
-                    loop = asyncio.get_event_loop()
-                    content = loop.run_until_complete(func(*args, **kwargs))
-                else:
-                    content = func(*args, **kwargs)
+            if is_async:
+                @wraps(func)
+                async def wrapper(*args, **kwargs) -> Union[str, AsyncGenerator[str, None]]:
+                    if not self.async_client:
+                        raise ValueError("AsyncClient not initialized. Use AsyncOpenAI or AsyncAzureOpenAI client.")
                     
-                messages = format_messages(content, system_prompt)
-                
-                # Check cache for non-streaming requests
-                if use_cache and not stream:
-                    cache_key = create_cache_key({"messages": messages, "model": model or self.model})
-                    cached_result = self._completion_cache.get(cache_key)
-                    if cached_result:
-                        return cached_result.choices[0].message.content or ""
+                    system_prompt = func.__doc__.strip() if func.__doc__ else None
+                    content = await func(*args, **kwargs)
+                    messages = format_messages(content, system_prompt)
+                    
+                    if use_cache and not stream:
+                        cache_key = create_cache_key({"messages": messages, "model": model or self.model})
+                        cached_result = self._completion_cache.get(cache_key)
+                        if cached_result:
+                            return cached_result.choices[0].message.content or ""
 
-                # Execute completion
-                response = self.sync_client.complete(
-                    messages=messages,
-                    stream=stream,
-                    model=model or self.model,
-                    **llm_params
-                )
-
-                if stream:
-                    cancel_event = threading.Event()
-                    return StreamReturn(
-                        generator=self.stream_manager.create_sync_stream_generator(response, cancel_event),
-                        cancel_event=cancel_event
+                    response = await self.async_client.complete(
+                        messages=messages,
+                        stream=stream,
+                        model=model or self.model,
+                        **llm_params
                     )
-                else:
-                    if response.choices:
-                        self._completion_cache.put(cache_key, response)
-                        return response.choices[0].message.content or ""
-                    return ""
 
-            return async_wrapper if self.async_client else sync_wrapper
+                    if stream:
+                        return self.stream_manager.create_async_stream_generator(response)
+                    else:
+                        if response.choices:
+                            self._completion_cache.put(cache_key, response)
+                            return response.choices[0].message.content or ""
+                        return ""
+            else:
+                @wraps(func)
+                def wrapper(*args, **kwargs) -> Union[str, StreamReturn]:
+                    if not self.sync_client:
+                        raise ValueError("SyncClient not initialized. Use OpenAI or AzureOpenAI client.")
+                    
+                    system_prompt = func.__doc__.strip() if func.__doc__ else None
+                    content = func(*args, **kwargs)
+                    messages = format_messages(content, system_prompt)
+                    
+                    if use_cache and not stream:
+                        cache_key = create_cache_key({"messages": messages, "model": model or self.model})
+                        cached_result = self._completion_cache.get(cache_key)
+                        if cached_result:
+                            return cached_result.choices[0].message.content or ""
+
+                    response = self.sync_client.complete(
+                        messages=messages,
+                        stream=stream,
+                        model=model or self.model,
+                        **llm_params
+                    )
+
+                    if stream:
+                        cancel_event = threading.Event()
+                        return StreamReturn(
+                            generator=self.stream_manager.create_sync_stream_generator(response, cancel_event),
+                            cancel_event=cancel_event
+                        )
+                    else:
+                        if response.choices:
+                            self._completion_cache.put(cache_key, response)
+                            return response.choices[0].message.content or ""
+                        return ""
+
+            return wrapper
         return decorator
 
     @overload
