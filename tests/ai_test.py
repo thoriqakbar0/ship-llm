@@ -466,7 +466,7 @@ def test_cancel_stream():
     assert chunk_count == 10
 
 def test_structured_non_streaming():
-    @ai.structured(SubjectClassifier)
+    @ai.structured(response_format=SubjectClassifier)
     def classify_subject(query: str):
         """
         Classify the subject of the query.
@@ -482,7 +482,7 @@ def test_structured_non_streaming():
     assert len(result.reasoning) > 0
 
 def test_structured_streaming_partial():
-    @ai.structured(StoryPart, stream=True, stream_mode="partial")
+    @ai.structured(response_format=StoryPart, stream=True, stream_mode="partial")
     def tell_story_partial():
         """Tell a story in parts."""
         return "Tell me a story in parts."
@@ -499,7 +499,7 @@ def test_structured_streaming_partial():
     assert final_part.content is not None
 
 def test_structured_streaming_iterable():
-    @ai.structured(StoryPart, stream=True, stream_mode="iterable")
+    @ai.structured(response_format=StoryPart, stream=True, stream_mode="iterable")
     def tell_story_iterable():
         """Tell a story in parts."""
         return "Tell me a story in parts."
@@ -525,6 +525,52 @@ def test_chat():
     result = chat()
     assert isinstance(result, str)
     assert "paris" in result.lower()
+
+def test_structured_with_temperature():
+    @ai.structured(response_format=StoryPart, temperature=0.8)
+    def generate_creative_story() -> StoryPart:
+        """Generate a creative short story part with high temperature for more randomness"""
+        return "Write a creative short story part"
+
+    result = generate_creative_story()
+    assert isinstance(result, StoryPart)
+    assert isinstance(result.part_number, int)
+    assert isinstance(result.content, str)
+    assert len(result.content) > 0
+
+def test_structured_with_top_p():
+    @ai.structured(response_format=SubjectClassifier, top_p=0.3)
+    def analyze_subject() -> SubjectClassifier:
+        """Analyze the subject of a given text with low top_p for more focused output"""
+        return "Classify this text: Photosynthesis is the process by which plants convert sunlight into energy"
+
+    result = analyze_subject()
+    assert isinstance(result, SubjectClassifier)
+    assert result.subject in ["Biology", "Chemistry", "Physics", "Earth Science", "Geography", "Science", "Botany"]
+    assert 0 <= result.confidence <= 1
+    assert len(result.reasoning) > 0
+
+def test_text_with_temperature():
+    @ai.text(temperature=0.8)
+    def generate_creative_response():
+        """Generate a creative response about space exploration"""
+        return "Tell me something creative about space exploration"
+
+    result = generate_creative_response()
+    assert isinstance(result, str)
+    assert len(result) > 0
+    assert "space" in result.lower() or "exploration" in result.lower()
+
+def test_text_with_top_p():
+    @ai.text(top_p=0.3)
+    def generate_focused_response():
+        """Generate a focused response about the importance of clean energy"""
+        return "Explain the importance of clean energy"
+
+    result = generate_focused_response()
+    assert isinstance(result, str)
+    assert len(result) > 0
+    assert "energy" in result.lower() or "clean" in result.lower()
 
 if __name__ == "__main__":
     pytest.main()
